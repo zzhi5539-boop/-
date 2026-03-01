@@ -4,6 +4,9 @@ const cors = require('cors');
 
 const userRoutes = require('./routes/users');
 const orderRoutes = require('./routes/orders');
+const routePlanningRoutes = require('./routes/routes');
+const financeRoutes = require('./routes/finance');
+const settingsRoutes = require('./routes/settings');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -15,6 +18,10 @@ app.use(express.json());
 // Routes
 app.use('/api/users', userRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/routes', routePlanningRoutes);
+app.use('/api/auth', require('./routes/auth'));
+app.use('/api/finance', financeRoutes);
+app.use('/api/settings', settingsRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

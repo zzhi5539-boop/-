@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useState, FormEvent, useEffect } from 'react';
 
 const API_URL = 'http://localhost:4000/api';
@@ -14,6 +14,7 @@ interface User {
 }
 
 export default function Users() {
+  const navigate = useNavigate();
   const [users, setUsers] = useState<User[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -169,17 +170,25 @@ export default function Users() {
       console.error('Failed to update user permissions:', error);
     }
   };
+
+  const handleLogout = () => {
+    localStorage.removeItem('isAuthenticated');
+    navigate('/login');
+  };
+
   return (
     <div className="flex h-screen w-full overflow-hidden bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display antialiased">
       <div className="w-64 flex-shrink-0 flex flex-col justify-between bg-white dark:bg-[#111813] border-r border-slate-200 dark:border-[#29382e]">
         <div className="flex flex-col gap-4 p-4">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="bg-center bg-no-repeat bg-cover rounded-full h-10 w-10 shrink-0" style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuBzRoVgspp0njU_tO69kNI9tnbLQWvr1fBfEshCCtF6spqD7LZxT6pDbY85dso-OgR8OdeitcJ8IuruNs4BSGXMgPLm-CmohneoFxTQUB8Hqr6F8mC3myqXczQAvvzOFE8o4rkAQrU6ycCK_iPlz8uBN0flbt56_DbnfocNHM1NDxgkw3plR3KMUcUP-zyQACLjze0wYm11U0FKiaCeR9fJCbPRl4aVMXkfrs0EVw0NKK-0ZPBf2qwVuGOyAtqrcCCXBsn8tdtPWQ")' }}></div>
+          <Link to="/dashboard" className="flex items-center gap-3 mb-4 text-slate-900 dark:text-white hover:opacity-80 transition-opacity">
+            <div className="h-10 w-10 rounded-lg bg-primary/20 flex items-center justify-center text-primary shrink-0">
+              <span className="material-symbols-outlined text-2xl">agriculture</span>
+            </div>
             <div className="flex flex-col">
-              <h1 className="text-slate-900 dark:text-white text-base font-bold leading-normal">农业物流系统</h1>
+              <h1 className="text-base font-bold leading-tight">农业物流系统</h1>
               <p className="text-slate-500 dark:text-[#9db8a6] text-xs font-normal leading-normal">管理员控制台</p>
             </div>
-          </div>
+          </Link>
           <div className="flex flex-col gap-1">
             <Link className="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-500 dark:text-[#9db8a6] hover:bg-slate-100 dark:hover:bg-[#29382e] hover:text-slate-900 dark:hover:text-white transition-colors group" to="/dashboard">
               <span className="material-symbols-outlined text-xl group-hover:text-primary">dashboard</span>
@@ -193,7 +202,7 @@ export default function Users() {
               <span className="material-symbols-outlined text-xl group-hover:text-primary">map</span>
               <span className="text-sm font-medium">路径规划</span>
             </Link>
-            <Link className="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-500 dark:text-[#9db8a6] hover:bg-slate-100 dark:hover:bg-[#29382e] hover:text-slate-900 dark:hover:text-white transition-colors group" to="#">
+            <Link className="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-500 dark:text-[#9db8a6] hover:bg-slate-100 dark:hover:bg-[#29382e] hover:text-slate-900 dark:hover:text-white transition-colors group" to="/finance">
               <span className="material-symbols-outlined text-xl group-hover:text-primary">bar_chart</span>
               <span className="text-sm font-medium">财务报表</span>
             </Link>
@@ -201,7 +210,7 @@ export default function Users() {
               <span className="material-symbols-outlined text-xl text-primary">group</span>
               <span className="text-sm font-bold">用户管理</span>
             </div>
-            <Link className="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-500 dark:text-[#9db8a6] hover:bg-slate-100 dark:hover:bg-[#29382e] hover:text-slate-900 dark:hover:text-white transition-colors group" to="#">
+            <Link className="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-500 dark:text-[#9db8a6] hover:bg-slate-100 dark:hover:bg-[#29382e] hover:text-slate-900 dark:hover:text-white transition-colors group" to="/settings">
               <span className="material-symbols-outlined text-xl group-hover:text-primary">settings</span>
               <span className="text-sm font-medium">系统设置</span>
             </Link>
@@ -231,7 +240,19 @@ export default function Users() {
               <span className="material-symbols-outlined">notifications</span>
               <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full"></span>
             </button>
-            <div className="h-8 w-8 rounded-full bg-cover bg-center ring-2 ring-slate-200 dark:ring-[#29382e]" style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuCNtAThP-cElX3PnrLSVMVIMGjPjdIoy6d9laQdsrhGFFfeati-nripcDxIhZ8ZG04Z1stFcJtdIOBaXSgjDapVvA6OuU_UCciGx4N-KFtSYv-yYQUC639_KumEUkrLMxnbtBBvezLPZQ3RUV1_sbDsrcCsfbo6gu5-2JV8SU-zgzYlS7KYga7bCAibZvGpCoGAr5MI6yl-npmexMiRRAZOQWbgfT11ED0GtXjUvgFPdmvi-p43cdNZleAQCI2L5jtMvHmyD_SQbQ")' }}></div>
+
+            <div className="h-6 w-px bg-slate-200 dark:bg-slate-700 mx-2"></div>
+
+            <div className="flex items-center gap-3">
+              <img alt="管理员头像" className="h-8 w-8 rounded-full object-cover border border-slate-200 dark:border-slate-700" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCi731gtv-4U9y-oFS956A0U5kaOdz2lPu3OwwpVedyEzrVZk_GROnAD_pqDFbU_TpDRHRKBBo8YRTJcX2VBJ8eU4qXQr7tqA-ttaKKZ-gCtvtx3HhOSvasnVtM8E83_xqUHJHdGZVsF_Ho_8CEmrpTHYmgrwm4yCuLNTZ23sA_Wx9oOeKhocquv4K_E55We9P99CAUc9MInDosd2NpW8k4XjKuvM5OZdWPnT_OElnDtdVlYIFRraFX0OsvsECcdTkytDW-W2ddFg" />
+              <div className="hidden md:flex flex-col">
+                <p className="text-sm font-semibold text-slate-900 dark:text-white leading-none">Alex Morgan</p>
+                <p className="text-[10px] text-slate-500 dark:text-[#9db8a6] mt-0.5">物流主管</p>
+              </div>
+              <button onClick={handleLogout} className="ml-1 text-slate-400 hover:text-red-500 transition-colors" title="退出登录">
+                <span className="material-symbols-outlined !text-[18px]">logout</span>
+              </button>
+            </div>
           </div>
         </header>
         <main className="flex-1 overflow-auto p-6 bg-slate-50 dark:bg-[#0d1410]">
@@ -314,8 +335,8 @@ export default function Users() {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${user.role === '管理员' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300' :
-                                user.role === '调度员' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' :
-                                  'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300'
+                              user.role === '调度员' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' :
+                                'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300'
                               }`}>
                               {user.role}
                             </span>
@@ -323,8 +344,8 @@ export default function Users() {
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="flex items-center gap-1.5">
                               <div className={`h-2 w-2 rounded-full ${user.status === '活跃' ? 'bg-green-500' :
-                                  user.status === '离线' ? 'bg-slate-400' :
-                                    'bg-red-500'
+                                user.status === '离线' ? 'bg-slate-400' :
+                                  'bg-red-500'
                                 }`}></div>
                               <span className="text-sm text-slate-600 dark:text-slate-300">{user.status}</span>
                             </div>

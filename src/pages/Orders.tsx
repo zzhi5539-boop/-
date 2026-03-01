@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useState, FormEvent, useEffect } from 'react';
 
 const API_URL = 'http://localhost:4000/api';
@@ -21,8 +21,11 @@ interface Order {
 }
 
 export default function Orders() {
+  const navigate = useNavigate();
   const [orders, setOrders] = useState<Order[]>([]);
   const [showModal, setShowModal] = useState(false);
+  const [editingOrderId, setEditingOrderId] = useState<string | null>(null);
+  const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const [newOrder, setNewOrder] = useState<Partial<Order>>({
     status: '待处理',
     productImage: 'https://picsum.photos/seed/agri/200/200',
@@ -63,8 +66,65 @@ export default function Orders() {
     }
   };
 
-  const handleCreateOrder = async (e: FormEvent) => {
+  const metrics = {
+    total: orders.length,
+    inTransit: orders.filter(o => o.status === '运输中').length,
+    pending: orders.filter(o => o.status === '待处理').length,
+    completed: orders.filter(o => o.status === '已完成').length,
+    completionRate: orders.length > 0
+      ? ((orders.filter(o => o.status === '已完成').length / orders.length) * 100).toFixed(1)
+      : '0.0'
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
+    setEditingOrderId(null);
+    setNewOrder({ status: '待处理', productImage: 'https://picsum.photos/seed/agri/200/200', temperature: '常温', coldChain: false });
+  };
+
+  const handleEditClick = (order: Order) => {
+    setNewOrder({ ...order });
+    setEditingOrderId(order.id);
+    setShowModal(true);
+    setActiveMenu(null);
+  };
+
+  const handleSubmitOrder = async (e: FormEvent) => {
     e.preventDefault();
+
+    if (editingOrderId) {
+      try {
+        const orderToUpdate = {
+          product: newOrder.product,
+          product_detail: newOrder.productDetail,
+          product_image: newOrder.productImage,
+          origin: newOrder.origin,
+          origin_detail: newOrder.originDetail,
+          destination: newOrder.destination,
+          destination_detail: newOrder.destinationDetail,
+          status: newOrder.status,
+          temperature: newOrder.temperature,
+          cold_chain: !!newOrder.coldChain
+        };
+        const res = await fetch(`${API_URL}/orders/${encodeURIComponent(editingOrderId)}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(orderToUpdate)
+        });
+        if (res.ok) {
+          const updatedData = await res.json();
+          setOrders(orders.map(o => o.id === editingOrderId ? mapOrderFromDB(updatedData) : o));
+          closeModal();
+        } else {
+          alert('更新订单失败');
+        }
+      } catch (error) {
+        console.error('Failed to update order:', error);
+        alert('更新订单失败');
+      }
+      return;
+    }
+
     const orderToCreate = {
       id: `#ORD-${Math.floor(1000 + Math.random() * 9000)}`,
       date: new Date().toLocaleString('zh-CN', { month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
@@ -89,18 +149,71 @@ export default function Orders() {
       if (res.ok) {
         const data = await res.json();
         setOrders([mapOrderFromDB(data), ...orders]);
-        setShowModal(false);
-        setNewOrder({ status: '待处理', productImage: 'https://picsum.photos/seed/agri/200/200', temperature: '常温', coldChain: false });
+        closeModal();
       }
     } catch (error) {
       console.error('Failed to create order:', error);
     }
   };
+
+  const handleDeleteOrder = async (id: string) => {
+    if (!window.confirm('确定要删除此订单吗？')) return;
+
+    try {
+      const res = await fetch(`${API_URL}/orders/${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+      });
+      if (res.ok) {
+        setOrders(orders.filter(order => order.id !== id));
+      } else {
+        alert('删除失败');
+      }
+    } catch (error) {
+      console.error('Failed to delete order:', error);
+      alert('删除失败');
+    }
+    setActiveMenu(null);
+  };
+
+  const handleUpdateStatus = async (id: string, newStatus: Order['status']) => {
+    try {
+      const res = await fetch(`${API_URL}/orders/${encodeURIComponent(id)}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus })
+      });
+      if (res.ok) {
+        const updatedOrder = await res.json();
+        setOrders(orders.map(order =>
+          order.id === id ? mapOrderFromDB(updatedOrder) : order
+        ));
+      } else {
+        alert('状态更新失败');
+      }
+    } catch (error) {
+      console.error('Failed to update status:', error);
+      alert('状态更新失败');
+    }
+    setActiveMenu(null);
+  };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => setActiveMenu(null);
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('isAuthenticated');
+    navigate('/login');
+  };
+
   return (
     <div className="relative flex min-h-screen w-full flex-col bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display antialiased overflow-x-hidden">
       <header className="sticky top-0 z-50 flex items-center justify-between whitespace-nowrap border-b border-solid border-slate-200 dark:border-[#29382e] bg-white dark:bg-[#111813] px-10 py-3">
         <div className="flex items-center gap-8">
-          <div className="flex items-center gap-3 text-slate-900 dark:text-white">
+          <Link to="/dashboard" className="flex items-center gap-3 text-slate-900 dark:text-white hover:opacity-80 transition-opacity">
             <div className="h-10 w-10 rounded-lg bg-primary/20 flex items-center justify-center text-primary">
               <span className="material-symbols-outlined text-2xl">agriculture</span>
             </div>
@@ -108,7 +221,7 @@ export default function Orders() {
               <h1 className="text-base font-bold leading-tight">农业物流系统</h1>
               <p className="text-slate-500 dark:text-slate-400 text-xs">管理员控制台</p>
             </div>
-          </div>
+          </Link>
           <label className="hidden md:flex flex-col min-w-40 !h-10 max-w-64">
             <div className="flex w-full flex-1 items-stretch rounded-lg h-full ring-1 ring-slate-200 dark:ring-[#29382e]">
               <div className="text-slate-500 dark:text-[#9db8a6] flex border-none bg-slate-50 dark:bg-[#29382e] items-center justify-center pl-4 rounded-l-lg border-r-0">
@@ -122,13 +235,18 @@ export default function Orders() {
           <div className="hidden lg:flex items-center gap-9">
             <Link className="text-slate-600 hover:text-primary dark:text-slate-300 dark:hover:text-white text-sm font-medium leading-normal transition-colors" to="/dashboard">仪表盘</Link>
             <Link className="text-primary text-sm font-bold leading-normal" to="/orders">订单</Link>
-            <Link className="text-slate-600 hover:text-primary dark:text-slate-300 dark:hover:text-white text-sm font-medium leading-normal transition-colors" to="#">库存</Link>
+            <Link className="text-slate-600 hover:text-primary dark:text-slate-300 dark:hover:text-white text-sm font-medium leading-normal transition-colors" to="/finance">财务</Link>
             <Link className="text-slate-600 hover:text-primary dark:text-slate-300 dark:hover:text-white text-sm font-medium leading-normal transition-colors" to="/routes">路线</Link>
             <Link className="text-slate-600 hover:text-primary dark:text-slate-300 dark:hover:text-white text-sm font-medium leading-normal transition-colors" to="/users">用户管理</Link>
+            <Link className="text-slate-600 hover:text-primary dark:text-slate-300 dark:hover:text-white text-sm font-medium leading-normal transition-colors" to="/settings">设置</Link>
           </div>
           <div className="flex gap-2">
             <button
-              onClick={() => setShowModal(true)}
+              onClick={() => {
+                setEditingOrderId(null);
+                setNewOrder({ status: '待处理', productImage: 'https://picsum.photos/seed/agri/200/200', temperature: '常温', coldChain: false });
+                setShowModal(true);
+              }}
               className="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-primary text-[#112116] hover:bg-green-400 transition-colors text-sm font-bold leading-normal tracking-[0.015em]"
             >
               <span className="truncate">新建订单</span>
@@ -139,8 +257,21 @@ export default function Orders() {
             <button className="flex cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 bg-slate-100 hover:bg-slate-200 dark:bg-[#29382e] dark:hover:bg-[#35473a] text-slate-900 dark:text-white gap-2 text-sm font-bold leading-normal tracking-[0.015em] min-w-0 px-2.5 transition-colors">
               <span className="material-symbols-outlined text-xl">settings</span>
             </button>
+
+            <div className="h-10 w-px bg-slate-200 dark:border-[#29382e] mx-2"></div>
+
+            <div className="flex items-center gap-3">
+              <img alt="管理员头像" className="h-10 w-10 rounded-full object-cover border border-slate-200 dark:border-slate-700" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCi731gtv-4U9y-oFS956A0U5kaOdz2lPu3OwwpVedyEzrVZk_GROnAD_pqDFbU_TpDRHRKBBo8YRTJcX2VBJ8eU4qXkWUh1Kb1SnSDTq3-uIv7ST9bWKXsODT85HOZrL5IH6JHn38O0_KU8lJrDeSDYuDXDyZA2Dt9MHXtBp24IkItSn3H5QDU758da8bO6vDrLldzzeu1VpRfyAcR-3xIC9_p8x5vNI7muD8K4eXxYXOs7NNdUgtTGg" />
+              <div className="hidden md:flex flex-col">
+                <p className="text-sm font-semibold text-slate-900 dark:text-white">Alex Morgan</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">物流主管</p>
+              </div>
+              <button onClick={handleLogout} className="ml-2 text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors" title="退出登录">
+                <span className="material-symbols-outlined">logout</span>
+              </button>
+            </div>
+
           </div>
-          <div className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10 ring-2 ring-primary/50" style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuActCr9nM9PLnw3fG5epDPN1Lg4c3RlaygEr8LT_VIUNIyxCnnT8saU5lUoyvaSe3_ZwjlVcY-lX-YPvxfq5FBRUxNeEuJkUWJjUZYWOWA4Z4qXkWUh1Kb1SnSDTq3-uIv7ST9bWKXsODT85HOZrL5IH6JHn38O0_KU8lJrDeSDYuDXDyZA2Dt9MHXtBp24IkItSn3H5QDU758da8bO6vDrLldzzeu1VpRfyAcR-3xIC9_p8x5vNI7muD8K4eXxYXOs7NNdUgtTGg")' }}></div>
         </div>
       </header>
       <div className="flex flex-1 justify-center py-5 px-4 md:px-10">
@@ -163,7 +294,7 @@ export default function Orders() {
                 <p className="text-slate-500 dark:text-[#9db8a6] text-sm font-medium">订单总数</p>
                 <span className="material-symbols-outlined text-primary">inventory_2</span>
               </div>
-              <p className="text-slate-900 dark:text-white text-3xl font-bold">1,248</p>
+              <p className="text-slate-900 dark:text-white text-3xl font-bold">{metrics.total}</p>
               <div className="flex items-center gap-1 mt-2 text-xs text-primary font-medium">
                 <span className="material-symbols-outlined text-sm">trending_up</span>
                 <span>较上周增长 12%</span>
@@ -174,7 +305,7 @@ export default function Orders() {
                 <p className="text-slate-500 dark:text-[#9db8a6] text-sm font-medium">运输中</p>
                 <span className="material-symbols-outlined text-blue-400">local_shipping</span>
               </div>
-              <p className="text-slate-900 dark:text-white text-3xl font-bold">86</p>
+              <p className="text-slate-900 dark:text-white text-3xl font-bold">{metrics.inTransit}</p>
               <div className="flex items-center gap-1 mt-2 text-xs text-slate-400">
                 <span>活跃运输任务</span>
               </div>
@@ -184,7 +315,7 @@ export default function Orders() {
                 <p className="text-slate-500 dark:text-[#9db8a6] text-sm font-medium">待处理</p>
                 <span className="material-symbols-outlined text-yellow-400">schedule</span>
               </div>
-              <p className="text-slate-900 dark:text-white text-3xl font-bold">24</p>
+              <p className="text-slate-900 dark:text-white text-3xl font-bold">{metrics.pending}</p>
               <div className="flex items-center gap-1 mt-2 text-xs text-red-400 font-medium">
                 <span className="material-symbols-outlined text-sm">priority_high</span>
                 <span>4 个高优先级</span>
@@ -195,9 +326,9 @@ export default function Orders() {
                 <p className="text-slate-500 dark:text-[#9db8a6] text-sm font-medium">已完成</p>
                 <span className="material-symbols-outlined text-green-400">check_circle</span>
               </div>
-              <p className="text-slate-900 dark:text-white text-3xl font-bold">1,138</p>
+              <p className="text-slate-900 dark:text-white text-3xl font-bold">{metrics.completed}</p>
               <div className="flex items-center gap-1 mt-2 text-xs text-primary font-medium">
-                <span>98% 准时送达</span>
+                <span>{metrics.completionRate}% 准时送达</span>
               </div>
             </div>
           </div>
@@ -294,14 +425,14 @@ export default function Orders() {
                     </td>
                     <td className="p-4">
                       <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${order.status === '运输中' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' :
-                          order.status === '待处理' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300' :
-                            order.status === '已完成' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' :
-                              'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
+                        order.status === '待处理' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300' :
+                          order.status === '已完成' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' :
+                            'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
                         }`}>
                         <span className={`size-1.5 rounded-full ${order.status === '运输中' ? 'bg-blue-500' :
-                            order.status === '待处理' ? 'bg-yellow-500' :
-                              order.status === '已完成' ? 'bg-green-500' :
-                                'bg-red-500'
+                          order.status === '待处理' ? 'bg-yellow-500' :
+                            order.status === '已完成' ? 'bg-green-500' :
+                              'bg-red-500'
                           }`}></span>
                         {order.status}
                       </span>
@@ -316,10 +447,68 @@ export default function Orders() {
                         <span className="text-sm text-slate-400 italic">未分配</span>
                       )}
                     </td>
-                    <td className="p-4 text-right">
-                      <button className="text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors">
+                    <td className="p-4 text-right relative">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActiveMenu(activeMenu === order.id ? null : order.id);
+                        }}
+                        className="text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors"
+                      >
                         <span className="material-symbols-outlined">more_vert</span>
                       </button>
+
+                      {activeMenu === order.id && (
+                        <div
+                          className="absolute right-8 top-10 w-48 bg-white dark:bg-[#1c2921] rounded-lg shadow-lg border border-slate-200 dark:border-[#29382e] z-50 overflow-hidden"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <div className="py-1">
+                            <div className="px-4 py-2 text-xs font-semibold text-slate-500 dark:text-[#9db8a6] bg-slate-50 dark:bg-[#111813] border-b border-slate-200 dark:border-[#29382e]">
+                              更新状态
+                            </div>
+                            <button
+                              onClick={() => handleUpdateStatus(order.id, '待处理')}
+                              className="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#23332a] transition-colors"
+                            >
+                              设为待处理
+                            </button>
+                            <button
+                              onClick={() => handleUpdateStatus(order.id, '运输中')}
+                              className="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#23332a] transition-colors"
+                            >
+                              设为运输中
+                            </button>
+                            <button
+                              onClick={() => handleUpdateStatus(order.id, '延误')}
+                              className="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#23332a] transition-colors"
+                            >
+                              设为延误
+                            </button>
+                            <button
+                              onClick={() => handleUpdateStatus(order.id, '已完成')}
+                              className="w-full text-left px-4 py-2 text-sm text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors border-b border-slate-200 dark:border-[#29382e]"
+                            >
+                              设为已完成
+                            </button>
+                            <div className="px-4 py-2 text-xs font-semibold text-slate-500 dark:text-[#9db8a6] bg-slate-50 dark:bg-[#111813] border-b border-slate-200 dark:border-[#29382e]">
+                              其他操作
+                            </div>
+                            <button
+                              onClick={() => handleEditClick(order)}
+                              className="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#23332a] transition-colors"
+                            >
+                              编辑订单
+                            </button>
+                            <button
+                              onClick={() => handleDeleteOrder(order.id)}
+                              className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                            >
+                              删除订单
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -327,7 +516,7 @@ export default function Orders() {
             </table>
             <div className="px-4 py-3 border-t border-slate-200 dark:border-[#29382e] flex items-center justify-between">
               <div className="text-sm text-slate-500 dark:text-slate-400">
-                显示第 <span className="font-medium text-slate-900 dark:text-white">1</span> 到 <span className="font-medium text-slate-900 dark:text-white">4</span> 条，共 <span className="font-medium text-slate-900 dark:text-white">128</span> 条结果
+                显示第 <span className="font-medium text-slate-900 dark:text-white">{orders.length > 0 ? 1 : 0}</span> 到 <span className="font-medium text-slate-900 dark:text-white">{orders.length}</span> 条，共 <span className="font-medium text-slate-900 dark:text-white">{orders.length}</span> 条结果
               </div>
               <div className="flex gap-2">
                 <button className="px-3 py-1 rounded border border-slate-300 dark:border-[#3e5546] text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#23332a] disabled:opacity-50">上一页</button>
@@ -411,12 +600,14 @@ export default function Orders() {
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
           <div className="bg-white dark:bg-[#1c2921] w-full max-w-md rounded-2xl shadow-2xl border border-slate-200 dark:border-[#29382e] overflow-hidden animate-in fade-in zoom-in duration-200">
             <div className="p-6 border-b border-slate-200 dark:border-[#29382e] flex justify-between items-center bg-slate-50 dark:bg-[#23332a]">
-              <h3 className="text-xl font-bold text-slate-900 dark:text-white">新建物流订单</h3>
-              <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors">
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white">
+                {editingOrderId ? '编辑物流订单' : '新建物流订单'}
+              </h3>
+              <button onClick={closeModal} className="text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors">
                 <span className="material-symbols-outlined">close</span>
               </button>
             </div>
-            <form onSubmit={handleCreateOrder} className="p-6 space-y-4">
+            <form onSubmit={handleSubmitOrder} className="p-6 space-y-4">
               <div className="space-y-1.5">
                 <label className="text-sm font-bold text-slate-700 dark:text-slate-300">产品名称</label>
                 <input
@@ -493,11 +684,11 @@ export default function Orders() {
                 </div>
               </div>
               <div className="pt-4 flex gap-3">
-                <button type="button" onClick={() => setShowModal(false)} className="flex-1 px-4 py-2.5 rounded-lg border border-slate-200 dark:border-[#29382e] text-slate-700 dark:text-white font-bold hover:bg-slate-50 dark:hover:bg-[#23332a] transition-colors">
+                <button type="button" onClick={closeModal} className="flex-1 px-4 py-2.5 rounded-lg border border-slate-200 dark:border-[#29382e] text-slate-700 dark:text-white font-bold hover:bg-slate-50 dark:hover:bg-[#23332a] transition-colors">
                   取消
                 </button>
                 <button type="submit" className="flex-1 px-4 py-2.5 rounded-lg bg-primary text-[#112116] font-bold hover:bg-green-400 transition-colors shadow-lg shadow-primary/20">
-                  确认创建
+                  {editingOrderId ? '保存更改' : '确认创建'}
                 </button>
               </div>
             </form>

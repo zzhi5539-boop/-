@@ -12,6 +12,12 @@
   --font-display: "Inter", sans-serif;
 }
 
+/* Enforce Leaflet map container to fill parent and manage z-index */
+.leaflet-container {
+  width: 100% !important;
+  height: 100% !important;
+  z-index: 10;
+}
 @layer utilities {
   .custom-scrollbar::-webkit-scrollbar {
     width: 8px;
