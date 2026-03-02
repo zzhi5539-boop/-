@@ -38,7 +38,69 @@ const calculateDistance = (lat1, lon1, lat2, lon2) => {
     return d;
 };
 
-// POST /api/routes/optimize - Greedy TSP Algorithm
+// Helper: Calculate total route distance for an array of points (first point is depot)
+const calculateTotalDistance = (points) => {
+    let total = 0;
+    for (let i = 0; i < points.length - 1; i++) {
+        total += calculateDistance(points[i].lat, points[i].lng, points[i + 1].lat, points[i + 1].lng);
+    }
+    return total;
+};
+
+// 2-opt: Reverse a segment of the route between index i and j (inclusive)
+const twoOptSwap = (route, i, j) => {
+    const newRoute = [
+        ...route.slice(0, i),
+        ...route.slice(i, j + 1).reverse(),
+        ...route.slice(j + 1)
+    ];
+    return newRoute;
+};
+
+// 2-opt local optimization: repeatedly try reversing sub-segments to shorten total distance
+const twoOptOptimize = (depot, route, maxIterations = 500) => {
+    // Build a full path including depot as the first "node"
+    let bestRoute = [...route];
+    let improved = true;
+    let iterations = 0;
+
+    while (improved && iterations < maxIterations) {
+        improved = false;
+        iterations++;
+
+        for (let i = 0; i < bestRoute.length - 1; i++) {
+            for (let j = i + 1; j < bestRoute.length; j++) {
+                // Calculate cost of current edges that would be removed
+                const pointA = i === 0 ? depot : bestRoute[i - 1];
+                const pointB = bestRoute[i];
+                const pointC = bestRoute[j];
+                const pointD = j === bestRoute.length - 1 ? null : bestRoute[j + 1];
+
+                // Current distance of the two edges: A→B and C→D
+                let currentCost = calculateDistance(pointA.lat, pointA.lng, pointB.lat, pointB.lng);
+                if (pointD) {
+                    currentCost += calculateDistance(pointC.lat, pointC.lng, pointD.lat, pointD.lng);
+                }
+
+                // New distance if we reverse segment [i..j]: A→C and B→D
+                let newCost = calculateDistance(pointA.lat, pointA.lng, pointC.lat, pointC.lng);
+                if (pointD) {
+                    newCost += calculateDistance(pointB.lat, pointB.lng, pointD.lat, pointD.lng);
+                }
+
+                // If the new configuration is shorter, apply the swap
+                if (newCost < currentCost - 0.001) { // small epsilon to avoid floating point loops
+                    bestRoute = twoOptSwap(bestRoute, i, j);
+                    improved = true;
+                }
+            }
+        }
+    }
+
+    return { route: bestRoute, iterations };
+};
+
+// POST /api/routes/optimize - Greedy Nearest Neighbor + 2-opt Local Optimization
 router.post('/optimize', async (req, res) => {
     try {
         const { orderIds, depot = { lat: 39.9042, lng: 116.4074 } } = req.body;
@@ -61,7 +123,7 @@ router.post('/optimize', async (req, res) => {
             return res.status(404).json({ error: 'No valid orders found' });
         }
 
-        // 2. Attach stable coordinates to orders based on our existing logic
+        // 2. Attach stable coordinates to orders
         let unvisitedOrders = dbOrders.map(order => ({
             order_id: order.id,
             product: order.product,
@@ -69,12 +131,10 @@ router.post('/optimize', async (req, res) => {
             ...getOrderRealCoordinates(order.id)
         }));
 
-        // 3. Greedy Routing Logic (Nearest Neighbor)
-        let optimizedRoute = [];
-        let currentLocation = depot;
-        let totalDistanceKm = 0;
+        // ====== Phase 1: Greedy Nearest Neighbor (initial solution) ======
+        let greedyRoute = [];
+        let currentLocation = { ...depot };
 
-        // We keep finding the closest unvisited order to our currentLocation
         while (unvisitedOrders.length > 0) {
             let nearestIndex = -1;
             let minDistance = Infinity;
@@ -85,34 +145,52 @@ router.post('/optimize', async (req, res) => {
                     currentLocation.lat, currentLocation.lng,
                     order.lat, order.lng
                 );
-
                 if (distance < minDistance) {
                     minDistance = distance;
                     nearestIndex = i;
                 }
             }
 
-            // Add the closest order to the route
             const nextStop = unvisitedOrders[nearestIndex];
-            optimizedRoute.push({
-                ...nextStop,
-                distance_from_prev: Number(minDistance.toFixed(2)) // Round to 2 decimals
-            });
-
-            // Update counters & state
-            totalDistanceKm += minDistance;
+            greedyRoute.push(nextStop);
             currentLocation = { lat: nextStop.lat, lng: nextStop.lng };
-
-            // Remove from unvisited pool
             unvisitedOrders.splice(nearestIndex, 1);
         }
 
-        // Output calculation
+        const greedyDistance = calculateTotalDistance([depot, ...greedyRoute]);
+
+        // ====== Phase 2: 2-opt Local Optimization ======
+        const { route: optimizedStops, iterations } = twoOptOptimize(depot, greedyRoute);
+
+        // Recalculate per-segment distances for the optimized route
+        let totalDistanceKm = 0;
+        const optimizedRoute = optimizedStops.map((stop, index) => {
+            const prev = index === 0 ? depot : optimizedStops[index - 1];
+            const dist = calculateDistance(prev.lat, prev.lng, stop.lat, stop.lng);
+            totalDistanceKm += dist;
+            return {
+                ...stop,
+                distance_from_prev: Number(dist.toFixed(2))
+            };
+        });
+
+        const improvementPercent = greedyDistance > 0
+            ? Number(((1 - totalDistanceKm / greedyDistance) * 100).toFixed(1))
+            : 0;
+
+        // Output
         res.json({
             depot: depot,
             ordered_waypoints: optimizedRoute,
             total_items: optimizedRoute.length,
-            total_distance_km: Number(totalDistanceKm.toFixed(2))
+            total_distance_km: Number(totalDistanceKm.toFixed(2)),
+            optimization: {
+                algorithm: 'Greedy Nearest Neighbor + 2-opt',
+                greedy_distance_km: Number(greedyDistance.toFixed(2)),
+                optimized_distance_km: Number(totalDistanceKm.toFixed(2)),
+                improvement_percent: improvementPercent,
+                iterations: iterations
+            }
         });
 
     } catch (error) {

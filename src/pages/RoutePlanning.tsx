@@ -55,6 +55,13 @@ export default function RoutePlanning() {
   const [optimizedData, setOptimizedData] = useState<{
     ordered_waypoints: Waypoint[];
     total_distance_km: number;
+    optimization?: {
+      algorithm: string;
+      greedy_distance_km: number;
+      optimized_distance_km: number;
+      improvement_percent: number;
+      iterations: number;
+    };
   } | null>(null);
 
   useEffect(() => {
@@ -312,10 +319,22 @@ export default function RoutePlanning() {
               <span className="text-text-secondary text-[10px] uppercase font-bold tracking-wider">配送站点</span>
               <span className="text-white font-bold text-lg">{optimizedData?.ordered_waypoints.length || 0}</span>
             </div>
-            <div className="flex flex-col items-center px-4">
+            <div className="flex flex-col items-center px-4 border-r border-border-dark">
               <span className="text-text-secondary text-[10px] uppercase font-bold tracking-wider">总里程</span>
               <span className="text-white font-bold text-lg">{optimizedData?.total_distance_km || 0} km</span>
             </div>
+            {optimizedData?.optimization && (
+              <>
+                <div className="flex flex-col items-center px-4 border-r border-border-dark">
+                  <span className="text-text-secondary text-[10px] uppercase font-bold tracking-wider">贪心路线</span>
+                  <span className="text-orange-400 font-bold text-lg">{optimizedData.optimization.greedy_distance_km} km</span>
+                </div>
+                <div className="flex flex-col items-center px-4">
+                  <span className="text-text-secondary text-[10px] uppercase font-bold tracking-wider">2-opt 优化</span>
+                  <span className="text-primary font-bold text-lg">↓ {optimizedData.optimization.improvement_percent}%</span>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </main>
