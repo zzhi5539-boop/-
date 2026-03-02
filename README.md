@@ -23,8 +23,28 @@
 
 ### 前置条件
 
-- [Node.js](https://nodejs.org/) v18+（安装时勾选"Add to PATH"）
-- 一个 [Supabase](https://supabase.com/) 项目（免费注册即可）
+#### ⬇️ 安装 Node.js（必须）
+
+1. 打开 https://nodejs.org/ ，点击下载 **LTS（长期支持版）**
+2. 运行安装包，**安装过程中注意以下关键步骤：**
+   - ✅ 勾选 **"Add to PATH"**（添加到系统路径）— 这一步**非常重要**
+   - ✅ 如果出现 "Automatically install necessary tools" 也勾选上
+3. 安装完成后，**关闭所有已打开的终端/CMD 窗口**，重新打开一个
+4. 输入以下命令验证安装成功：
+   ```bash
+   node -v
+   npm -v
+   ```
+   如果能看到版本号（如 `v20.x.x`），说明安装成功。
+
+> ⚠️ **如果提示 `'npm' 不是内部或外部命令`：**
+> - 方法一：重启电脑，然后重新打开终端再试
+> - 方法二：卸载 Node.js，重新安装，**务必勾选 "Add to PATH"**
+
+#### 🗄️ 注册 Supabase 数据库
+
+- 打开 https://supabase.com/ ，用 GitHub 或邮箱**免费注册**一个账号
+- 创建一个新项目（Region 选亚洲，密码随意设置并记住）
 
 ### 1. 解压项目
 
