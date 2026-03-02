@@ -23,31 +23,25 @@
 
 ### 前置条件
 
-- [Node.js](https://nodejs.org/) v18+
+- [Node.js](https://nodejs.org/) v18+（安装时勾选"Add to PATH"）
 - 一个 [Supabase](https://supabase.com/) 项目（免费注册即可）
 
-### 1. 克隆项目
+### 1. 解压项目
 
-```bash
-git clone https://github.com/zzhi5539-boop/-.git
-cd -
-```
+将压缩包解压到任意目录，例如 `D:\agri-logistics\`。
 
 ### 2. 配置 Supabase 数据库
 
-1. 登录 [Supabase 控制台](https://app.supabase.com/)
-2. 打开你的项目 → **SQL Editor**
-3. 将 `server/database.sql` 的内容粘贴并执行
-4. 这会创建 `users`、`orders`、`system_settings` 三张表并插入初始数据
+1. 登录 [Supabase 控制台](https://app.supabase.com/)，创建一个新项目
+2. 打开项目 → 左侧菜单 **SQL Editor**
+3. 将项目内 `server/database.sql` 文件的全部内容复制粘贴进去，点击 **Run** 执行
+4. 这会自动创建 `users`、`orders`、`system_settings` 三张表并插入初始数据
 
 ### 3. 配置后端环境变量
 
-```bash
-cd server
-cp .env.example .env
-```
-
-编辑 `server/.env`，填入你的 Supabase 项目信息：
+1. 进入 `server/` 文件夹
+2. 把 `.env.example` 文件**复制一份**，重命名为 `.env`
+3. 用记事本打开 `.env`，填入你的 Supabase 项目信息：
 
 ```env
 PORT=4000
@@ -55,32 +49,31 @@ SUPABASE_URL=https://你的项目ID.supabase.co
 SUPABASE_KEY=你的anon公钥
 ```
 
-> 💡 在 Supabase 控制台的 **Settings → API** 中可以找到这两个值。
+> 💡 **去哪找这两个值？** 在 Supabase 控制台 → **Settings → API** 页面，复制 `Project URL` 和 `anon public` 密钥。
 
 ### 4. 安装依赖并启动
 
-```bash
-# 安装后端依赖 (在 server/ 目录下)
-npm install
+打开**命令提示符（CMD）**或 **PowerShell**，依次执行以下命令：
 
-# 启动后端 (在 server/ 目录下)
+**启动后端：**
+```bash
+cd 你的解压路径\server
+npm install
 npm run dev
 ```
+看到 `Server is running on port 4000` 即表示后端启动成功。
 
-新开一个终端窗口：
-
+**新开一个终端窗口，启动前端：**
 ```bash
-# 回到项目根目录，安装前端依赖
+cd 你的解压路径
 npm install
-
-# 启动前端开发服务器
 npm run dev
 ```
+看到 `Local: http://localhost:3000` 即表示前端启动成功。
 
 ### 5. 访问系统
 
-- **前端：** http://localhost:3000
-- **后端 API：** http://localhost:4000/api
+打开浏览器，访问 **http://localhost:3000**
 
 默认登录账号：
 | 邮箱 | 密码 | 角色 |
