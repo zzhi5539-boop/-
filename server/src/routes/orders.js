@@ -19,7 +19,7 @@ router.post('/', async (req, res) => {
         const {
             id, date, product, product_detail, product_image,
             origin, origin_detail, destination, destination_detail,
-            status, driver, driver_image, temperature, cold_chain
+            status, driver, driver_image, temperature, cold_chain, crop_type, priority
         } = req.body;
 
         const { data, error } = await supabase
@@ -27,7 +27,7 @@ router.post('/', async (req, res) => {
             .insert([{
                 id, date, product, product_detail, product_image,
                 origin, origin_detail, destination, destination_detail,
-                status, driver, driver_image, temperature, cold_chain
+                status, driver, driver_image, temperature, cold_chain, crop_type, priority
             }])
             .select();
 

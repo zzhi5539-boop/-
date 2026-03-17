@@ -100,6 +100,25 @@ npm run dev
 |------|------|------|
 | sarah.j@agrilogistics.com | 123 | 管理员 |
 
+## ❓ 常见问题
+
+### 前端启动报错：`Cannot find native binding`
+
+完整错误：`Error: Cannot find native binding` 或 `@tailwindcss/oxide` 相关报错。
+
+**原因：** npm 的可选依赖安装存在已知 bug，导致 Tailwind CSS 的原生模块没有正确下载。
+
+**解决方法：** 在**项目根目录**下依次执行（注意不是 server 目录）：
+
+```bash
+rmdir /s /q node_modules
+del package-lock.json
+npm install
+npm run dev
+```
+
+> 如果仍然报错，尝试使用管理员权限运行终端再执行上述命令。
+
 ## 📁 项目结构
 
 ```

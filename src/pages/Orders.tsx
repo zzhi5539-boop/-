@@ -18,6 +18,8 @@ interface Order {
   driverImage?: string;
   temperature: string;
   coldChain: boolean;
+  cropType: string;
+  priority: '普通' | '高' | '极高';
 }
 
 export default function Orders() {
@@ -30,7 +32,9 @@ export default function Orders() {
     status: '待处理',
     productImage: 'https://picsum.photos/seed/agri/200/200',
     temperature: '常温',
-    coldChain: false
+    coldChain: false,
+    cropType: '蔬果',
+    priority: '普通'
   });
 
   useEffect(() => {
@@ -51,7 +55,9 @@ export default function Orders() {
     driver: dbOrder.driver,
     driverImage: dbOrder.driver_image,
     temperature: dbOrder.temperature,
-    coldChain: dbOrder.cold_chain
+    coldChain: dbOrder.cold_chain,
+    cropType: dbOrder.crop_type || '未分类',
+    priority: dbOrder.priority || '普通'
   });
 
   const fetchOrders = async () => {
@@ -71,6 +77,7 @@ export default function Orders() {
     inTransit: orders.filter(o => o.status === '运输中').length,
     pending: orders.filter(o => o.status === '待处理').length,
     completed: orders.filter(o => o.status === '已完成').length,
+    highPriority: orders.filter(o => o.status === '待处理' && (o.priority === '高' || o.priority === '极高')).length,
     completionRate: orders.length > 0
       ? ((orders.filter(o => o.status === '已完成').length / orders.length) * 100).toFixed(1)
       : '0.0'
@@ -79,7 +86,7 @@ export default function Orders() {
   const closeModal = () => {
     setShowModal(false);
     setEditingOrderId(null);
-    setNewOrder({ status: '待处理', productImage: 'https://picsum.photos/seed/agri/200/200', temperature: '常温', coldChain: false });
+    setNewOrder({ status: '待处理', productImage: 'https://picsum.photos/seed/agri/200/200', temperature: '常温', coldChain: false, cropType: '蔬果', priority: '普通' });
   };
 
   const handleEditClick = (order: Order) => {
@@ -104,7 +111,9 @@ export default function Orders() {
           destination_detail: newOrder.destinationDetail,
           status: newOrder.status,
           temperature: newOrder.temperature,
-          cold_chain: !!newOrder.coldChain
+          cold_chain: !!newOrder.coldChain,
+          crop_type: newOrder.cropType,
+          priority: newOrder.priority
         };
         const res = await fetch(`${API_URL}/orders/${encodeURIComponent(editingOrderId)}`, {
           method: 'PUT',
@@ -116,11 +125,12 @@ export default function Orders() {
           setOrders(orders.map(o => o.id === editingOrderId ? mapOrderFromDB(updatedData) : o));
           closeModal();
         } else {
-          alert('更新订单失败');
+          const errorData = await res.json();
+          alert(`更新订单失败: ${errorData.error || errorData.message || '未知错误'}`);
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('Failed to update order:', error);
-        alert('更新订单失败');
+        alert(`更新订单失败: ${error.message}`);
       }
       return;
     }
@@ -137,7 +147,9 @@ export default function Orders() {
       destination_detail: newOrder.destinationDetail || '未知地区',
       status: newOrder.status || '待处理',
       temperature: newOrder.temperature || '常温',
-      cold_chain: !!newOrder.coldChain
+      cold_chain: !!newOrder.coldChain,
+      crop_type: newOrder.cropType || '蔬果',
+      priority: newOrder.priority || '普通'
     };
 
     try {
@@ -244,7 +256,7 @@ export default function Orders() {
             <button
               onClick={() => {
                 setEditingOrderId(null);
-                setNewOrder({ status: '待处理', productImage: 'https://picsum.photos/seed/agri/200/200', temperature: '常温', coldChain: false });
+                setNewOrder({ status: '待处理', productImage: 'https://picsum.photos/seed/agri/200/200', temperature: '常温', coldChain: false, cropType: '蔬果', priority: '普通' });
                 setShowModal(true);
               }}
               className="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-primary text-[#112116] hover:bg-green-400 transition-colors text-sm font-bold leading-normal tracking-[0.015em]"
@@ -295,9 +307,8 @@ export default function Orders() {
                 <span className="material-symbols-outlined text-primary">inventory_2</span>
               </div>
               <p className="text-slate-900 dark:text-white text-3xl font-bold">{metrics.total}</p>
-              <div className="flex items-center gap-1 mt-2 text-xs text-primary font-medium">
-                <span className="material-symbols-outlined text-sm">trending_up</span>
-                <span>较上周增长 12%</span>
+              <div className="flex items-center gap-1 mt-2 text-xs text-slate-400">
+                <span>较上周无变动</span>
               </div>
             </div>
             <div className="bg-white dark:bg-[#1c2921] p-5 rounded-xl border border-slate-200 dark:border-[#29382e] shadow-sm">
@@ -318,7 +329,7 @@ export default function Orders() {
               <p className="text-slate-900 dark:text-white text-3xl font-bold">{metrics.pending}</p>
               <div className="flex items-center gap-1 mt-2 text-xs text-red-400 font-medium">
                 <span className="material-symbols-outlined text-sm">priority_high</span>
-                <span>4 个高优先级</span>
+                <span>{metrics.highPriority} 个高优先级</span>
               </div>
             </div>
             <div className="bg-white dark:bg-[#1c2921] p-5 rounded-xl border border-slate-200 dark:border-[#29382e] shadow-sm">
@@ -371,6 +382,8 @@ export default function Orders() {
                   </th>
                   <th className="p-4 text-xs font-medium text-slate-500 dark:text-[#9db8a6] uppercase tracking-wider">订单编号</th>
                   <th className="p-4 text-xs font-medium text-slate-500 dark:text-[#9db8a6] uppercase tracking-wider">产品</th>
+                  <th className="p-4 text-xs font-medium text-slate-500 dark:text-[#9db8a6] uppercase tracking-wider">种类</th>
+                  <th className="p-4 text-xs font-medium text-slate-500 dark:text-[#9db8a6] uppercase tracking-wider">优先级</th>
                   <th className="p-4 text-xs font-medium text-slate-500 dark:text-[#9db8a6] uppercase tracking-wider">起点</th>
                   <th className="p-4 text-xs font-medium text-slate-500 dark:text-[#9db8a6] uppercase tracking-wider">终点</th>
                   <th className="p-4 text-xs font-medium text-slate-500 dark:text-[#9db8a6] uppercase tracking-wider">温度要求</th>
@@ -398,6 +411,19 @@ export default function Orders() {
                           <div className="text-xs text-slate-500 dark:text-slate-400">{order.productDetail}</div>
                         </div>
                       </div>
+                    </td>
+                    <td className="p-4">
+                      <span className="inline-flex items-center px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-medium">
+                        {order.cropType}
+                      </span>
+                    </td>
+                    <td className="p-4">
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide ${order.priority === '极高' ? 'bg-red-500 text-white' :
+                        order.priority === '高' ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300' :
+                          'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
+                        }`}>
+                        {order.priority}
+                      </span>
                     </td>
                     <td className="p-4">
                       <div className="text-sm text-slate-900 dark:text-white">{order.origin}</div>
@@ -618,17 +644,43 @@ export default function Orders() {
                   onChange={e => setNewOrder({ ...newOrder, product: e.target.value })}
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-sm font-bold text-slate-700 dark:text-slate-300">重量/规格</label>
+                <input
+                  className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-[#29382e] bg-slate-50 dark:bg-[#111813] text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/50 outline-none"
+                  placeholder="例如：500 kg • 箱装"
+                  value={newOrder.productDetail || ''}
+                  onChange={e => setNewOrder({ ...newOrder, productDetail: e.target.value })}
+                />
+              </div>
+              <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-sm font-bold text-slate-700 dark:text-slate-300">重量/规格</label>
-                  <input
+                  <label className="text-sm font-bold text-slate-700 dark:text-slate-300">种类</label>
+                  <select
                     className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-[#29382e] bg-slate-50 dark:bg-[#111813] text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/50 outline-none"
-                    placeholder="500 kg • 箱装"
-                    value={newOrder.productDetail || ''}
-                    onChange={e => setNewOrder({ ...newOrder, productDetail: e.target.value })}
-                  />
+                    value={newOrder.cropType}
+                    onChange={e => setNewOrder({ ...newOrder, cropType: e.target.value })}
+                  >
+                    <option value="蔬果">蔬果</option>
+                    <option value="粮食">粮食</option>
+                    <option value="畜牧">畜牧</option>
+                    <option value="水产">水产</option>
+                    <option value="其他">其他</option>
+                  </select>
                 </div>
                 <div className="space-y-1.5">
+                  <label className="text-sm font-bold text-slate-700 dark:text-slate-300">优先级</label>
+                  <select
+                    className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-[#29382e] bg-slate-50 dark:bg-[#111813] text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/50 outline-none"
+                    value={newOrder.priority}
+                    onChange={e => setNewOrder({ ...newOrder, priority: e.target.value as any })}
+                  >
+                    <option value="普通">普通</option>
+                    <option value="高">高</option>
+                    <option value="极高">极高</option>
+                  </select>
+                </div>
+                <div className="space-y-1.5 ">
                   <label className="text-sm font-bold text-slate-700 dark:text-slate-300">状态</label>
                   <select
                     className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-[#29382e] bg-slate-50 dark:bg-[#111813] text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/50 outline-none"
