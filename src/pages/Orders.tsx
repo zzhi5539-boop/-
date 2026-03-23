@@ -21,6 +21,14 @@ interface Order {
   cropType: string;
   priority: '普通' | '高' | '极高';
 }
+const AVAILABLE_DRIVERS = [
+  { name: '未分配', image: null },
+  { name: '迈克尔·R', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDtnuhZTW4gSQuN0xXG38gkNUNiI1hBApdOTPNUrR9X4Bai7Ht6Ajbhxknzndjb14OHVAJ47hDa9k9nn74uqpC5cXlUfEftfkLQ_qS3vVTZ7cMWLf_4LBsr73UwlTDARYTPE7hF81k9h1Uq1-ekmENhBruN4FkYIG6Gp6Tzvj2jW86509Jfd-apv9U1oJ1Ytrm2J17SktBipq-MPPNdUCb1ryeVaUCbjbM6Vqdc03mF4dq2UZgThTY009OyeIHj-GMXLdWW_nPRPQ' },
+  { name: '莎拉·M', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCSpyuRCbsBnFR3A894rRXhWRJLypwZ9KqMuLQjm7kod8UUDdIj3ZaIxS6dTN82OP1rAw4f6t6yNzWZhakAbSuq6NpEnukDtWE7hgSYBoMGZmgpWqL8xt7QuK-khK9cqQ6CEjw3IXtIRpPKKs5Fv2sdCnci0SHVJE94pXj8epRYim7c3uGXAA8C949_hDLZDYSIuK4olWc5H1Eh7AQBP94tjwhO-GRC4YQZwmt67zw3_kGaAhbhwudihtz3-1drQNECYdB9iPGjEQ' },
+  { name: '大卫·K', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBfou9vd2kbjQqDZhCsTLk_RbyiS-H_O8w8WFHFnzQwdrrBSDzSEc7rbZQappgsvykFplAUBFzu31qPMv7wx7uNH9HXbAQY9rN6eU-tGiX0LarF82xRNGyJJRp8d-Fkn42ni1U8F3jzqamXST2PJ3jIhtDEXC86c5H4OGkpWxuWr9UZg6pK7LtM3GZpVuu8-9Kt89s0n29fOYdpGXdeJ6BocM6hzRw2gEZcaTxhZ8rq-hBtGBmgB8l9OAg' },
+  { name: '约翰·D', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDtnuhZTW4gSQuN0xXG38gkNUNiI1hBApdOTPNUrR9X4Bai7Ht6Ajbhxknzndjb14OHVAJ47hDa9k9nn74uqpC5cXlUfEftfkLQ_qS3vVTZ7cMWLf_4LBsr73UwlTDARYTPE7hF81k9h1Uq1-ekmENhBruN4FkYIG6Gp6Tzvj2jW86509Jfd-apv9U1oJ1Ytrm2J17SktBipq-MPPNdUCb1ryeVaUCbjbM6Vqdc03mF4dq2UZgThTY009OyeIHj-GMXLdWW_nPRPQ' },
+  { name: '艾米丽·W', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCSpyuRCbsBnFR3A894rRXhWRJLypwZ9KqMuLQjm7kod8UUDdIj3ZaIxS6dTN82OP1rAw4f6t6yNzWZhakAbSuq6NpEnukDtWE7hgSYBoMGZmgpWqL8xt7QuK-khK9cqQ6CEjw3IXtIRpPKKs5Fv2sdCnci0SHVJE94pXj8epRYim7c3uGXAA8C949_hDLZDYSIuK4olWc5H1Eh7AQBP94tjwhO-GRC4YQZwmt67zw3_kGaAhbhwudihtz3-1drQNECYdB9iPGjEQ' }
+];
 
 export default function Orders() {
   const navigate = useNavigate();
@@ -34,7 +42,8 @@ export default function Orders() {
     temperature: '常温',
     coldChain: false,
     cropType: '蔬果',
-    priority: '普通'
+    priority: '普通',
+    driver: '未分配'
   });
 
   useEffect(() => {
@@ -86,11 +95,11 @@ export default function Orders() {
   const closeModal = () => {
     setShowModal(false);
     setEditingOrderId(null);
-    setNewOrder({ status: '待处理', productImage: 'https://picsum.photos/seed/agri/200/200', temperature: '常温', coldChain: false, cropType: '蔬果', priority: '普通' });
+    setNewOrder({ status: '待处理', productImage: 'https://picsum.photos/seed/agri/200/200', temperature: '常温', coldChain: false, cropType: '蔬果', priority: '普通', driver: '未分配' });
   };
 
   const handleEditClick = (order: Order) => {
-    setNewOrder({ ...order });
+    setNewOrder({ ...order, driver: order.driver || '未分配' });
     setEditingOrderId(order.id);
     setShowModal(true);
     setActiveMenu(null);
@@ -98,6 +107,7 @@ export default function Orders() {
 
   const handleSubmitOrder = async (e: FormEvent) => {
     e.preventDefault();
+    const selectedDriver = AVAILABLE_DRIVERS.find(d => d.name === newOrder.driver);
 
     if (editingOrderId) {
       try {
@@ -113,7 +123,9 @@ export default function Orders() {
           temperature: newOrder.temperature,
           cold_chain: !!newOrder.coldChain,
           crop_type: newOrder.cropType,
-          priority: newOrder.priority
+          priority: newOrder.priority,
+          driver: newOrder.driver === '未分配' ? null : newOrder.driver,
+          driver_image: selectedDriver?.image || null
         };
         const res = await fetch(`${API_URL}/orders/${encodeURIComponent(editingOrderId)}`, {
           method: 'PUT',
@@ -149,7 +161,9 @@ export default function Orders() {
       temperature: newOrder.temperature || '常温',
       cold_chain: !!newOrder.coldChain,
       crop_type: newOrder.cropType || '蔬果',
-      priority: newOrder.priority || '普通'
+      priority: newOrder.priority || '普通',
+      driver: newOrder.driver === '未分配' ? null : newOrder.driver,
+      driver_image: selectedDriver?.image || null
     };
 
     try {
@@ -246,6 +260,7 @@ export default function Orders() {
         <div className="flex flex-1 justify-end gap-8">
           <div className="hidden lg:flex items-center gap-9">
             <Link className="text-slate-600 hover:text-primary dark:text-slate-300 dark:hover:text-white text-sm font-medium leading-normal transition-colors" to="/dashboard">仪表盘</Link>
+            <Link className="text-slate-600 hover:text-primary dark:text-slate-300 dark:hover:text-white text-sm font-medium leading-normal transition-colors" to="/monitoring">实时监控</Link>
             <Link className="text-primary text-sm font-bold leading-normal" to="/orders">订单</Link>
             <Link className="text-slate-600 hover:text-primary dark:text-slate-300 dark:hover:text-white text-sm font-medium leading-normal transition-colors" to="/finance">财务</Link>
             <Link className="text-slate-600 hover:text-primary dark:text-slate-300 dark:hover:text-white text-sm font-medium leading-normal transition-colors" to="/routes">路线</Link>
@@ -653,7 +668,7 @@ export default function Orders() {
                   onChange={e => setNewOrder({ ...newOrder, productDetail: e.target.value })}
                 />
               </div>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-4 gap-4">
                 <div className="space-y-1.5">
                   <label className="text-sm font-bold text-slate-700 dark:text-slate-300">种类</label>
                   <select
@@ -690,28 +705,65 @@ export default function Orders() {
                     <option value="待处理">待处理</option>
                     <option value="运输中">运输中</option>
                     <option value="已完成">已完成</option>
+                    <option value="延误">延误</option>
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-bold text-slate-700 dark:text-slate-300">司机</label>
+                  <select
+                    className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-[#29382e] bg-slate-50 dark:bg-[#111813] text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/50 outline-none"
+                    value={newOrder.driver || '未分配'}
+                    onChange={e => setNewOrder({ ...newOrder, driver: e.target.value })}
+                  >
+                    {AVAILABLE_DRIVERS.map(d => (
+                      <option key={d.name} value={d.name}>{d.name}</option>
+                    ))}
                   </select>
                 </div>
               </div>
-              <div className="space-y-1.5">
-                <label className="text-sm font-bold text-slate-700 dark:text-slate-300">起点 (农场/仓库)</label>
-                <input
-                  required
-                  className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-[#29382e] bg-slate-50 dark:bg-[#111813] text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/50 outline-none"
-                  placeholder="绿谷农场"
-                  value={newOrder.origin || ''}
-                  onChange={e => setNewOrder({ ...newOrder, origin: e.target.value })}
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-sm font-bold text-slate-700 dark:text-slate-300">起点 (农场/仓库)</label>
+                  <input
+                    required
+                    className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-[#29382e] bg-slate-50 dark:bg-[#111813] text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/50 outline-none"
+                    placeholder="绿谷农场"
+                    value={newOrder.origin || ''}
+                    onChange={e => setNewOrder({ ...newOrder, origin: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-bold text-slate-700 dark:text-slate-300">起点所在地区</label>
+                  <input
+                    required
+                    className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-[#29382e] bg-slate-50 dark:bg-[#111813] text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/50 outline-none"
+                    placeholder="加州萨利纳斯"
+                    value={newOrder.originDetail || ''}
+                    onChange={e => setNewOrder({ ...newOrder, originDetail: e.target.value })}
+                  />
+                </div>
               </div>
-              <div className="space-y-1.5">
-                <label className="text-sm font-bold text-slate-700 dark:text-slate-300">终点 (配送中心/市场)</label>
-                <input
-                  required
-                  className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-[#29382e] bg-slate-50 dark:bg-[#111813] text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/50 outline-none"
-                  placeholder="全食配送中心"
-                  value={newOrder.destination || ''}
-                  onChange={e => setNewOrder({ ...newOrder, destination: e.target.value })}
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-sm font-bold text-slate-700 dark:text-slate-300">终点 (配送中心/市场)</label>
+                  <input
+                    required
+                    className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-[#29382e] bg-slate-50 dark:bg-[#111813] text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/50 outline-none"
+                    placeholder="全食配送中心"
+                    value={newOrder.destination || ''}
+                    onChange={e => setNewOrder({ ...newOrder, destination: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-bold text-slate-700 dark:text-slate-300">终点所在地区</label>
+                  <input
+                    required
+                    className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-[#29382e] bg-slate-50 dark:bg-[#111813] text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/50 outline-none"
+                    placeholder="加州圣何塞"
+                    value={newOrder.destinationDetail || ''}
+                    onChange={e => setNewOrder({ ...newOrder, destinationDetail: e.target.value })}
+                  />
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">

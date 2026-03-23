@@ -191,8 +191,12 @@ export default function Users() {
           </Link>
           <div className="flex flex-col gap-1">
             <Link className="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-500 dark:text-[#9db8a6] hover:bg-slate-100 dark:hover:bg-[#29382e] hover:text-slate-900 dark:hover:text-white transition-colors group" to="/dashboard">
-              <span className="material-symbols-outlined text-xl group-hover:text-primary">dashboard</span>
-              <span className="text-sm font-medium">仪表盘</span>
+              <span className="material-symbols-outlined">space_dashboard</span>
+              <span className="font-medium text-sm">仪表盘</span>
+            </Link>
+            <Link className="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-500 dark:text-[#9db8a6] hover:bg-slate-100 dark:hover:bg-[#29382e] hover:text-slate-900 dark:hover:text-white transition-colors group" to="/monitoring">
+              <span className="material-symbols-outlined">location_on</span>
+              <span className="font-medium text-sm">实时监控</span>
             </Link>
             <Link className="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-500 dark:text-[#9db8a6] hover:bg-slate-100 dark:hover:bg-[#29382e] hover:text-slate-900 dark:hover:text-white transition-colors group" to="/orders">
               <span className="material-symbols-outlined text-xl group-hover:text-primary">list_alt</span>

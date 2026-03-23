@@ -114,6 +114,10 @@ export default function Dashboard() {
               <span className="material-symbols-outlined text-xl">dashboard</span>
               <span className="text-sm font-medium">仪表盘</span>
             </Link>
+            <Link className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-[#1a2e22] hover:text-slate-900 dark:hover:text-slate-200 transition-all" to="/monitoring">
+              <span className="material-symbols-outlined text-xl">location_on</span>
+              <span className="text-sm font-medium">实时监控</span>
+            </Link>
             <Link className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-[#1a2e22] hover:text-slate-900 dark:hover:text-slate-200 transition-all" to="/orders">
               <span className="material-symbols-outlined text-xl">shopping_cart</span>
               <span className="text-sm font-medium">订单管理</span>
@@ -261,53 +265,8 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-            <div className="lg:col-span-2 bg-surface-light dark:bg-[#1a2e22] rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col h-[500px]">
-              <div className="p-5 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
-                <h3 className="text-lg font-semibold">车队实时追踪</h3>
-                <div className="flex gap-2">
-                  <button className="px-3 py-1.5 text-xs font-medium rounded-md bg-primary text-slate-900">所有区域</button>
-                  <button className="px-3 py-1.5 text-xs font-medium rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700">北区</button>
-                  <button className="px-3 py-1.5 text-xs font-medium rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700">南区</button>
-                </div>
-              </div>
-              <div className="relative flex-1 w-full overflow-hidden bg-slate-900 rounded-b-xl z-0">
-                <MapContainer
-                  center={[39.9042, 116.4074]}
-                  zoom={10}
-                  style={{ height: '100%', width: '100%' }}
-                  zoomControl={false}
-                >
-                  <TileLayer
-                    url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
-                    attribution='&copy; <a href="https://carto.com/">CARTO</a>'
-                  />
-
-                  {activeOrders.map((order) => {
-                    const position = getOrderRealCoordinates(order.id);
-
-                    // Optional: Custom divIcon if you want to keep the pulse effect
-                    // Here we use standard Leaflet Markers with popups for a robust mapping experience
-                    return (
-                      <Marker
-                        key={order.id}
-                        position={position}
-                      >
-                        <Popup className="dark-popup">
-                          <div className="text-slate-900 font-sans">
-                            <strong>{order.id}</strong><br />
-                            产品: {order.product}<br />
-                            状态: {order.status}
-                          </div>
-                        </Popup>
-                      </Marker>
-                    );
-                  })}
-                </MapContainer>
-              </div>
-            </div>
-            <div className="flex flex-col gap-6">
-              <div className="bg-surface-light dark:bg-[#1a2e22] rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm p-5 flex-1 flex flex-col">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                          <div className="bg-surface-light dark:bg-[#1a2e22] rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm p-5 flex-1 flex flex-col h-[500px]">
                 <div className="mb-4">
                   <h3 className="text-lg font-semibold">配送统计</h3>
                   <p className="text-sm text-slate-500 dark:text-slate-400">过去7天表现</p>
@@ -343,7 +302,7 @@ export default function Dashboard() {
                   <span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span>
                 </div>
               </div>
-              <div className="bg-surface-light dark:bg-[#1a2e22] rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm p-5 flex-1">
+              <div className="bg-surface-light dark:bg-[#1a2e22] rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm p-5 flex-1 h-[500px] overflow-y-auto">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-lg font-semibold">异常告警</h3>
                   <a className="text-xs text-primary hover:underline" href="#">查看全部</a>
@@ -375,7 +334,6 @@ export default function Dashboard() {
                   </div>
                 </div>
               </div>
-            </div>
           </div>
           <div className="bg-surface-light dark:bg-[#1a2e22] rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden mb-8">
             <div className="p-5 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">

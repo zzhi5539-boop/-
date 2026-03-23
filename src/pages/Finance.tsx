@@ -75,9 +75,13 @@ export default function Finance() {
                     </Link>
                     <nav className="flex flex-col gap-1 mt-4">
                         <Link className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-[#1a2e22] transition-all" to="/dashboard">
-                            <span className="material-symbols-outlined text-xl">dashboard</span>
-                            <span className="text-sm font-medium">仪表盘</span>
-                        </Link>
+              <span className="material-symbols-outlined text-xl">dashboard</span>
+              <span className="text-sm font-medium">仪表盘</span>
+            </Link>
+            <Link className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-[#1a2e22] hover:text-slate-900 dark:hover:text-slate-200 transition-all" to="/monitoring">
+              <span className="material-symbols-outlined text-xl">location_on</span>
+              <span className="text-sm font-medium">实时监控</span>
+            </Link>            
                         <Link className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-[#1a2e22] transition-all" to="/orders">
                             <span className="material-symbols-outlined text-xl">shopping_cart</span>
                             <span className="text-sm font-medium">订单管理</span>

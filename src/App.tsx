@@ -7,6 +7,7 @@ import Users from './pages/Users';
 import Login from './pages/Login';
 import Finance from './pages/Finance';
 import Settings from './pages/Settings';
+import RealTimeMonitoring from './pages/RealTimeMonitoring';
 
 // Optional: A simple PrivateRoute wrapper
 function PrivateRoute({ children }: { children: React.ReactNode }) {
@@ -24,6 +25,7 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
+        <Route path="/monitoring" element={<PrivateRoute><RealTimeMonitoring /></PrivateRoute>} />
         <Route path="/orders" element={<PrivateRoute><Orders /></PrivateRoute>} />
         <Route path="/routes" element={<PrivateRoute><RoutePlanning /></PrivateRoute>} />
         <Route path="/users" element={<PrivateRoute><Users /></PrivateRoute>} />
