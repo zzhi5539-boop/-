@@ -104,7 +104,6 @@ UPDATE public.orders SET temperature = '12°C' WHERE id = '#ORD-7392';
 UPDATE public.orders SET temperature = '14°C' WHERE id = '#ORD-7391';
 UPDATE public.orders SET temperature = '4°C' WHERE id = '#ORD-7390';
 UPDATE public.orders SET temperature = '7°C' WHERE id = '#ORD-7389';
-UPDATE public.orders SET temperature = '常温' WHERE id = '#ORD-7374';
 
 -- Table: order_tracking (Real-time vehicle status)
 CREATE TABLE IF NOT EXISTS public.order_tracking (
@@ -146,7 +145,6 @@ INSERT INTO public.order_tracking (order_id, current_speed, current_temperature,
 ('#ORD-7391', 0.0, 14.8, 78.5, 92.0, '畅通', null),
 ('#ORD-7390', 0.0, 4.5, 85.0, 15.0, '畅通', null),
 ('#ORD-7389', 15.2, 8.2, 88.0, 34.0, '严重拥堵', timezone('utc'::text, now() + interval '4 hours 30 minutes')),
-('#ORD-7374', 0.0, 22.5, 60.0, 100.0, '畅通', timezone('utc'::text, now() + interval '5 hours')),
 ('#ORD-8001', 82.5, 2.5, 75.0, 68.0, '轻微拥堵', timezone('utc'::text, now() + interval '8 hours 10 minutes')),
 ('#ORD-8002', 76.0, 24.0, 50.0, 45.0, '畅通', timezone('utc'::text, now() + interval '12 hours 45 minutes'))
 ON CONFLICT (order_id) DO UPDATE SET 
