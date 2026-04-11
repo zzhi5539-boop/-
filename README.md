@@ -23,7 +23,7 @@
 
 ### 前置条件
 
-#### ⬇️ 安装 Node.js（必须）
+#### ⬇️ 安装 Node.js
 
 1. 打开 https://nodejs.org/ ，点击下载 **LTS（长期支持版）**
 2. 运行安装包，**安装过程中注意以下关键步骤：**
@@ -34,12 +34,7 @@
    ```bash
    node -v
    npm -v
-   ```
-   如果能看到版本号（如 `v20.x.x`），说明安装成功。
 
-> ⚠️ **如果提示 `'npm' 不是内部或外部命令`：**
-> - 方法一：重启电脑，然后重新打开终端再试
-> - 方法二：卸载 Node.js，重新安装，**务必勾选 "Add to PATH"**
 
 #### 🗄️ 注册 Supabase 数据库
 
@@ -99,16 +94,6 @@ npm run dev
 | 邮箱 | 密码 | 角色 |
 |------|------|------|
 | sarah.j@agrilogistics.com | 123 | 管理员 |
-
-## ❓ 常见问题
-
-### 前端启动报错：`Cannot find native binding`
-
-完整错误：`Error: Cannot find native binding` 或 `@tailwindcss/oxide` 相关报错。
-
-**原因：** npm 的可选依赖安装存在已知 bug，导致 Tailwind CSS 的原生模块没有正确下载。
-
-**解决方法：** 在**项目根目录**下依次执行（注意不是 server 目录）：
 
 ```bash
 rmdir /s /q node_modules
